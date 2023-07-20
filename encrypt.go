@@ -6,49 +6,55 @@ import (
 	"crypto/rand"
 )
 
-func EncryptAES(key []byte, body string) (string, error) {
+// Encrypt to AES using GCM as cipher.
+func EncryptAES(key []byte, data []byte) (*AESEncryptResult, error) {
 	// create cipher
 	c, err := aes.NewCipher(key)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
 	gcm, err := cipher.NewGCM(c)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
 	nonce := make([]byte, gcm.NonceSize())
 
 	_, err = rand.Read(nonce)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
-	ct := gcm.Seal(nonce, nonce, []byte(body), nil)
+	ct := gcm.Seal(nil, nonce, data, nil)
 
-	return string(ct), nil
+	return &AESEncryptResult{
+		Data:  ct,
+		Nonce: nonce,
+	}, nil
 }
 
-func DecryptAES(key []byte, ciphertext string) (string, error) {
+// Decrypt AES GCM encrypted data.
+func DecryptAES(key []byte, cipherData []byte, nonce []byte) ([]byte, error) {
 	c, err := aes.NewCipher(key)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
 	gcm, err := cipher.NewGCM(c)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
-	nonceSize := gcm.NonceSize()
-
-	nonce, ciphertext := ciphertext[:nonceSize], ciphertext[nonceSize:]
-
-	plainText, err := gcm.Open(nil, []byte(nonce), []byte(ciphertext), nil)
+	decoded, err := gcm.Open(nil, nonce, cipherData, nil)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
-	return string(plainText), nil
+	return decoded, nil
+}
+
+type AESEncryptResult struct {
+	Data  []byte
+	Nonce []byte
 }

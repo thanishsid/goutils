@@ -94,14 +94,14 @@ func StringToBool(str string, fallback bool) bool {
 }
 
 // Get md5 hash string
-func GetMD5Hash(str string) string {
-	hash := md5.Sum([]byte(str))
+func GetMD5Hash(data []byte) string {
+	hash := md5.Sum(data)
 	return hex.EncodeToString(hash[:])
 }
 
 // Base64Encode - Base64 Encode
-func Base64Encode(str string) string {
-	return base64.StdEncoding.EncodeToString([]byte(str))
+func Base64Encode(data []byte) string {
+	return base64.StdEncoding.EncodeToString(data)
 }
 
 func GetIpFromHttpReq(req *http.Request) (string, error) {
