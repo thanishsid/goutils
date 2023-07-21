@@ -7,7 +7,7 @@ import (
 )
 
 // Encrypt to AES using GCM as cipher.
-func EncryptAES(key []byte, data []byte) (*AESEncryptResult, error) {
+func EncryptAES(key []byte, data []byte, prefixNonce bool) (*AESEncryptResult, error) {
 	// create cipher
 	c, err := aes.NewCipher(key)
 	if err != nil {
@@ -26,7 +26,14 @@ func EncryptAES(key []byte, data []byte) (*AESEncryptResult, error) {
 		return nil, err
 	}
 
-	ct := gcm.Seal(nil, nonce, data, nil)
+	var ct []byte
+
+	if prefixNonce {
+		ct = gcm.Seal(nonce, nonce, data, nil)
+		nonce = nil
+	} else {
+		ct = gcm.Seal(nil, nonce, data, nil)
+	}
 
 	return &AESEncryptResult{
 		Data:  ct,
@@ -44,6 +51,11 @@ func DecryptAES(key []byte, cipherData []byte, nonce []byte) ([]byte, error) {
 	gcm, err := cipher.NewGCM(c)
 	if err != nil {
 		return nil, err
+	}
+
+	if len(nonce) == 0 {
+		nonceSize := gcm.NonceSize()
+		nonce, cipherData = cipherData[:nonceSize], cipherData[nonceSize:]
 	}
 
 	decoded, err := gcm.Open(nil, nonce, cipherData, nil)
